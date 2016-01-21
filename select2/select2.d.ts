@@ -26,6 +26,7 @@ interface Select2AjaxOptions {
     url?: any;
     dataType?: string;
     quietMillis?: number;
+    cache?: boolean;
     data?: (term: string, page: number, context: any) => any;
     results?: (term: any, page: number, context: any) => any;
 }
@@ -70,12 +71,31 @@ interface Select2Options {
     dropdownCss?: any;
     dropdownCssClass?: any;
     escapeMarkup?: (markup: string) => string;
+    theme?: string;
+    /**
+    * Template can return both plain string that will be HTML escaped and a jquery object that can render HTML
+    */
+    templateSelection?: (object: Select2SelectionObject) => any;
+    templateResult?: (object: Select2SelectionObject) => any;
 }
 
 interface Select2JQueryEventObject extends JQueryEventObject {
     val: any;
     added: any;
     removed: any;
+    choice: {
+        id: any;
+        text: string;
+    };
+}
+
+interface Select2SelectionObject {
+    disabled: boolean,
+    element: HTMLOptionElement,
+    id: string,
+    selected: boolean,
+    text: string,
+    title: string,
 }
 
 interface JQuery {
@@ -84,6 +104,26 @@ interface JQuery {
     on(events: "change", selector?: string, data?: any, handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
     on(events: "change", selector?: string, handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
     on(events: "change", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-opening", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-open", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-close", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-highlight", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-selecting", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-removing", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-removed", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-loaded", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-focus", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-blur", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-opening", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-open", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-close", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-highlight", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-selecting", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-removing", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-removed", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-loaded", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-focus", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
+    on(events: "select2-blur", handler?: (eventObject: Select2JQueryEventObject) => any): JQuery;
 
     select2(): JQuery;
     select2(it: IdTextPair): JQuery;
@@ -111,37 +151,37 @@ interface JQuery {
     /**
     * Reverts changes to DOM done by Select2. Any selection done via Select2 will be preserved.
     */
-    select2(method: 'destroy'): void;
+    select2(method: 'destroy'): JQuery;
     /**
     * Opens the dropdown
     */
-    select2(method: 'open'): void;
+    select2(method: 'open'): JQuery;
     /**
     * Closes the dropdown
     */
-    select2(method: 'close'): void;
+    select2(method: 'close'): JQuery;
     /**
     * Enables or disables Select2 and its underlying form component
     * @param value True if it should be enabled false if it should be disabled
     */
-    select2(method: 'enable', value: boolean): void;
+    select2(method: 'enable', value: boolean): JQuery;
     /**
     * Toggles readonly mode on Select2 and its underlying form component
     * @param value True if it should be readonly false if it should be read write
     */
-    select2(method: 'readonly', value: boolean): void;
+    select2(method: 'readonly', value: boolean): JQuery;
     /**
     * Retrieves the main container element that wraps all of DOM added by Select2
     */
-    select2(method: 'container'): HTMLElement;
+    select2(method: 'container'): JQuery;
     /**
     * Notifies Select2 that a drag and drop sorting operation has started
     */
-    select2(method: 'onSortStart'): void;
+    select2(method: 'onSortStart'): JQuery;
     /**
     * Notifies Select2 that a drag and drop sorting operation has finished
     */
-    select2(method: 'onSortEnd'): void;
+    select2(method: 'onSortEnd'): JQuery;
 
     select2(method: string): any;
     select2(method: string, value: any, trigger?: boolean): any;

@@ -8,18 +8,15 @@
 
 
 /*********************************** Begin setup for tests ******************************/
-
-// A developer must declare a var Template like this in a separate file to use this TypeScript type definition file
-interface ITemplate {
-  adminDashboard: IMeteorViewModel;
-  chat: IMeteorViewModel;
+var Rooms = new Mongo.Collection('rooms');
+var Messages = new Mongo.Collection('messages');
+interface MonkeyDAO {
+  _id: string;
+  name: string;
 }
-declare var Template: ITemplate;
-
-var Rooms = new Meteor.Collection('rooms');
-var Messages = new Meteor.Collection('messages');
-var Monkeys = new Meteor.Collection('monkeys');
-
+var Monkeys = new Mongo.Collection<MonkeyDAO>('monkeys');
+//var x = new Mongo.Collection<xDAO>('x');
+//var y = new Mongo.Collection<yDAO>('y');
 /********************************** End setup for tests *********************************/
 
 
@@ -88,14 +85,14 @@ Meteor.publish("counts-by-room", function (roomId) {
   });
 });
 
-var Counts = new Meteor.Collection("counts");
+var Counts = new Mongo.Collection("counts");
 
-Deps.autorun(function () {
+Tracker.autorun(function () {
   Meteor.subscribe("counts-by-room", Session.get("roomId"));
 });
 
 console.log("Current room has " +
-    Counts.findOne(Session.get("roomId")).count +
+    Counts.find(Session.get("roomId")).count +
     " messages.");
 
 /**
@@ -106,7 +103,7 @@ Meteor.subscribe("allplayers");
 /**
  * Also from Meteor.subscribe section
  */
-Deps.autorun(function () {
+Tracker.autorun(function () {
   Meteor.subscribe("chat", {room: Session.get("current-room")});
   Meteor.subscribe("privateMessages");
 });
@@ -121,7 +118,7 @@ Meteor.methods({
 
     var you_want_to_throw_an_error = true;
     if (you_want_to_throw_an_error)
-    throw new Meteor.Error(404, "Can't find my pants");
+      throw new Meteor.Error("404", "Can't find my pants");
     return "some return value";
   },
 
@@ -132,25 +129,48 @@ Meteor.methods({
 });
 
 /**
+ * From Methods, Meteor.Error section
+ */
+throw new Meteor.Error("logged-out",
+    "The user must be logged in to post a comment.");
+
+Meteor.call("methodName", function (error) {
+  if (error.error === "logged-out") {
+    Session.set("errorMessage", "Please log in to post a comment.");
+  }
+});
+var error = new Meteor.Error("logged-out", "The user must be logged in to post a comment.");
+console.log(error.error === "logged-out");
+console.log(error.reason === "The user must be logged in to post a comment.");
+console.log(error.details !== "");
+
+/**
  * From Methods, Meteor.call section
  */
 Meteor.call('foo', 1, 2, function (error, result) {} );
 var result = Meteor.call('foo', 1, 2);
 
 /**
- * From Collections, Meteor.Collection section
+ * From Collections, Mongo.Collection section
  */
 // DA: I added the "var" keyword in there
-var Chatrooms = new Meteor.Collection("chatrooms");
-Messages = new Meteor.Collection("messages");
 
-var myMessages = Messages.find({userId: Session.get('myUserId')}).fetch();
+interface ChatroomsDAO {
+  _id?: string;
+}
+interface MessagesDAO {
+  _id?: string;
+}
+var Chatrooms = new Mongo.Collection<ChatroomsDAO>("chatrooms");
+Messages = new Mongo.Collection<MessagesDAO>("messages");
+
+var myMessages = <MessagesDAO> Messages.find({userId: Session.get('myUserId')}).fetch();
 
 Messages.insert({text: "Hello, world!"});
 
 Messages.update(myMessages[0]._id, {$set: {important: true}});
 
-var Posts = new Meteor.Collection("posts");
+var Posts = new Mongo.Collection("posts");
 Posts.insert({title: "Hello world", body: "First post"});
 
 // Couldn't find assert() in the meteor docs
@@ -160,11 +180,11 @@ Posts.insert({title: "Hello world", body: "First post"});
  * Todo: couldn't figure out how to make this next line work with Typescript
  * since there is already a Collection constructor with a different signature
  *
- var Scratchpad = new Meteor.Collection;
-for (var i = 0; i < 10; i++)
-  Scratchpad.insert({number: i * 2});
-assert(Scratchpad.find({number: {$lt: 9}}).count() === 5);
-**/
+ var Scratchpad = new Mongo.Collection;
+ for (var i = 0; i < 10; i++)
+ Scratchpad.insert({number: i * 2});
+ assert(Scratchpad.find({number: {$lt: 9}}).count() === 5);
+ **/
 
 var Animal = function (doc) {
 //  _.extend(this, doc);
@@ -175,11 +195,18 @@ Animal.prototype = {
   makeNoise: function () {
     console.log(this.sound);
   }
+};
+
+
+interface AnimalDAO {
+  _id?: string;
+  name: string;
+  sound: string;
+  makeNoise?: () => void;
 }
 
-
 // Define a Collection that uses Animal as its document
-var Animals = new Meteor.Collection("Animals", {
+var Animals = new Mongo.Collection<AnimalDAO>("Animals", {
   transform: function (doc) { return new Animal(doc); }
 });
 
@@ -191,8 +218,8 @@ Animals.findOne({name: "raptor"}).makeNoise(); // prints "roar"
  * From Collections, Collection.insert section
  */
 // DA: I added the variable declaration statements to make this work
-var Lists = new Meteor.Collection('Lists');
-var Items = new Meteor.Collection('Lists');
+var Lists = new Mongo.Collection('Lists');
+var Items = new Mongo.Collection('Lists');
 
 var groceriesId = Lists.insert({name: "Groceries"});
 Items.insert({list: groceriesId, name: "Watercress"});
@@ -201,9 +228,9 @@ Items.insert({list: groceriesId, name: "Persimmons"});
 /**
  * From Collections, collection.update section
  */
-var Players = new Meteor.Collection('Players');
+var Players = new Mongo.Collection('Players');
 
-Template.adminDashboard.events({
+Template['adminDashboard'].events({
   'click .givePoints': function () {
     Players.update(Session.get("currentPlayer"), {$inc: {score: 5}});
   }
@@ -223,14 +250,14 @@ Meteor.methods({
 /**
  * From Collections, collection.remove section
  */
-Template.chat.events({
+Template['chat'].events({
   'click .remove': function () {
     Messages.remove(this._id);
   }
 });
 
 // DA: I added this next line
-var Logs = new Meteor.Collection('logs');
+var Logs = new Mongo.Collection('logs');
 
 Meteor.startup(function () {
   if (Meteor.isServer) {
@@ -242,18 +269,26 @@ Meteor.startup(function () {
 /***
  * From Collections, collection.allow section
  */
-Posts = new Meteor.Collection("posts");
+
+interface iPost {
+  _id: string;
+  owner: string;
+  userId: string;
+  locked: boolean;
+}
+
+Posts = new Mongo.Collection<iPost>("posts");
 
 Posts.allow({
-  insert: function (userId, doc) {
+  insert: function (userId, doc: iPost) {
     // the user must be logged in, and the document must be owned by the user
     return (userId && doc.owner === userId);
   },
-  update: function (userId, doc, fields, modifier) {
+  update: function (userId, doc: iPost, fields, modifier) {
     // can only change your own documents
     return doc.owner === userId;
   },
-  remove: function (userId, doc) {
+  remove: function (userId, doc: iPost) {
     // can only remove your own documents
     return doc.owner === userId;
   },
@@ -261,11 +296,11 @@ Posts.allow({
 });
 
 Posts.deny({
-  update: function (userId, docs, fields, modifier) {
+  update: function (userId, doc: iPost, fields, modifier) {
     // can't change owners
-    return docs.userId = userId;
+    return doc.userId !== userId;
   },
-  remove: function (userId, doc) {
+  remove: function (userId, doc: iPost) {
     // can't remove locked documents
     return doc.locked;
   },
@@ -283,20 +318,10 @@ topPosts.forEach(function (post) {
 });
 
 /**
- * From Collections, cursor.count section
- */
-var frag = Meteor.render(function () {
-  var highScoring = Posts.find({score: {$gt: 10}});
-  return "<p>There are " + highScoring.count() + " posts with " +
-      "scores greater than 10</p>";
-});
-document.body.appendChild(frag);
-
-/**
  * From Collections, cursor.observeChanges section
  */
 // DA: I added this line to make it work
-var Users = new Meteor.Collection('users');
+var Users = new Mongo.Collection('users');
 
 var count1 = 0;
 var query = Users.find({admin: true, onlineNow: true});
@@ -317,23 +342,17 @@ setTimeout(function () {handle.stop();}, 5000);
 /**
  * From Sessions, Session.set section
  */
-Deps.autorun(function () {
+Tracker.autorun(function () {
   Meteor.subscribe("chat-history", {room: Session.get("currentRoomId")});
 });
 
-// Causes the function passed to Deps.autorun to be re-run, so
+// Causes the function passed to Tracker.autorun to be re-run, so
 // that the chat-history subscription is moved to the room "home".
 Session.set("currentRoomId", "home");
 
 /**
  * From Sessions, Session.get section
  */
-Session.set("enemy", "Eastasia");
-var frag1 = Meteor.render(function () {
-  return "<p>We've always been at war with " +
-      Session.get("enemy") + "</p>";
-});
-
 // Page will say "We've always been at war with Eastasia"
 
 // DA: commented out since transpiler didn't like append()
@@ -362,15 +381,6 @@ Meteor.users.deny({update: function () { return true; }});
 /**
  * From Accounts, Meteor.loginWithExternalService section
  */
-Accounts.loginServiceConfiguration.remove({
-  service: "weibo"
-});
-Accounts.loginServiceConfiguration.insert({
-  service: "weibo",
-  clientId: "1292962797",
-  secret: "75a730b58f5691de5522789070c319bc"
-});
-
 Meteor.loginWithGithub({
   requestPermissions: ['user', 'public_repo']
 }, function (err) {
@@ -398,7 +408,7 @@ Accounts.ui.config({
 Accounts.validateNewUser(function (user) {
   if (user.username && user.username.length >= 3)
     return true;
-  throw new Meteor.Error(403, "Username must have at least 3 characters");
+  throw new Meteor.Error("403", "Username must have at least 3 characters");
 });
 // Validate username, without a specific error message.
 Accounts.validateNewUser(function (user) {
@@ -434,56 +444,46 @@ Accounts.emailTemplates.enrollAccount.text = function (user, url) {
 /**
  * From Templates, Template.myTemplate.helpers section
  */
-Template.adminDashboard.helpers({
+Template['adminDashboard'].helpers({
   foo: function () {
     return Session.get("foo");
   }
 });
-
-/**
- * From Templates, Template.myTemplate.preserve
- */
-Template.adminDashboard.preserve({
-  'input[id]': function (node) { return node.id; }
-});
-
-/**
- * From Templates, Meteor.render section
- */
-var frag2 = Meteor.render(function () {
-  return "<p>There are " + Players.find({online: true}).count() +
-      " players online.</p>";
-});
-document.body.appendChild(frag2);
-
-Players.update({idleTime: {$gt: 30}}, {$set: {online: false}});
-
-/**
- * From Templates, Meteor.renderList section
- */
-var frag3 = Meteor.renderList(
-    Posts.find({tags: "frontpage"}),
-    function(post) {
-      var style = Session.equals("selectedId", post._id) ? "selected" : "";
-      // A real app would need to quote/sanitize post.name
-      return '<div class="' + style + '">' + post.name + '</div>';
-    });
-document.body.appendChild(frag3);
-
-var somePost = Posts.findOne({tags: "frontpage"});
-Session.set("selectedId", somePost._id);
-
-var eventTester = {
-  'click p': function (event: IMeteorEvent) {
-    var paragraph = event.currentTarget; // always a P
-    var clickedElement = event.target; // could be the P or a child element
+Template['newTemplate'].helpers({
+  helperName: function () {
   }
-}
+});
+
+Template['newTemplate'].created = function () {
+
+};
+
+Template['newTemplate'].rendered = function () {
+
+};
+
+Template['newTemplate'].destroyed = function () {
+
+};
+
+Template['newTemplate'].events({
+  'click .something': function (event: Meteor.Event, template: Blaze.TemplateInstance) {
+  }
+});
+
+Template.registerHelper('testHelper', function() {
+  return 'tester';
+});
+
+var instance = Template.instance();
+var data = Template.currentData();
+var data = Template.parentData(1);
+var body = Template.body;
 
 /**
  * From Match section
  */
-var Chats = new Meteor.Collection('chats');
+var Chats = new Mongo.Collection('chats');
 
 Meteor.publish("chats-in-room", function (roomId) {
   // Make sure roomId is a string, not an arbitrary mongo selector object.
@@ -515,16 +515,16 @@ check({ name: undefined }, pat) // Throws an exception
 check(undefined, Match.Optional('test')); // OK
 
 /**
- * From Deps, Deps.autorun section
+ * From Deps, Tracker.autorun section
  */
-Deps.autorun(function () {
+Tracker.autorun(function () {
   var oldest = Monkeys.findOne('age = 20');
 
   if (oldest)
     Session.set("oldest", oldest.name);
 });
 
-Deps.autorun(function (c) {
+Tracker.autorun(function (c) {
   if (! Session.equals("shouldAlert", true))
     return;
 
@@ -535,21 +535,20 @@ Deps.autorun(function (c) {
 /**
  * From Deps, Deps.Computation
  */
-if (Deps.active) {
-  Deps.onInvalidate(function () {
-    Monkeys.destroy();
-    Rooms.finalize();
+if (Tracker.active) {
+  Tracker.onInvalidate(function () {
+    console.log('invalidated');
   });
 }
 
 /**
- * From Deps, Deps.Dependency
+ * From Tracker, Tracker.Dependency
  */
 var weather = "sunny";
-var weatherDep = new Deps.Dependency;
+var weatherDep = new Tracker.Dependency;
 
 var getWeather = function () {
-  weatherDep.depend()
+  weatherDep.depend();
   return weather;
 };
 
@@ -592,13 +591,6 @@ Meteor.methods({
     // Let other method calls from the same client start running,
     // without waiting for the email sending to complete.
     this.unblock();
-
-    Email.send({
-      to: to,
-      from: from,
-      subject: subject,
-      text: text
-    });
   }
 });
 
@@ -608,3 +600,24 @@ Meteor.call('sendEmail',
     'Hello from Meteor!',
     'This is a test of Email.send.');
 
+var testTemplate = new Blaze.Template();
+var testView = new Blaze.View();
+
+declare var el: HTMLElement;
+Blaze.render(testTemplate, el);
+Blaze.renderWithData(testTemplate, {testData: 123}, el);
+Blaze.remove(testView);
+Blaze.getData(el);
+Blaze.getData(testView);
+Blaze.toHTML(testTemplate);
+Blaze.toHTML(testView);
+Blaze.toHTMLWithData(testTemplate, {test: 1});
+Blaze.toHTMLWithData(testTemplate, function() {});
+Blaze.toHTMLWithData(testView, {test: 1});
+Blaze.toHTMLWithData(testView, function() {});
+
+var reactiveVar1 = new ReactiveVar<string>('test value');
+var reactiveVar2 = new ReactiveVar<string>('test value', function(oldVal) { return true; });
+
+var varValue: string = reactiveVar1.get();
+reactiveVar1.set('new value');

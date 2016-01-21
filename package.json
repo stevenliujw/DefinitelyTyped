@@ -17,23 +17,25 @@
     "url": "https://github.com/borisyankov/DefinitelyTyped/issues"
   },
   "engines": {
-    "node": ">= 0.10.0"
+    "node": ">= 0.12.0"
   },
   "scripts": {
-    "test": "npm run changes",
-    "changes": "node ./_infrastructure/tests/runner.js --tsc-version 1.0.0 --test-changes",
-    "all": "node ./_infrastructure/tests/runner.js --tsc-version 1.0.0",
-    "dry": "node ./_infrastructure/tests/runner.js --tsc-version 1.0.0 --skip-tests --test-changes",
-    "list": "node ./_infrastructure/tests/runner.js --tsc-version 1.0.0 --skip-tests --print-files --print-refmap",
-    "help": "node ./_infrastructure/tests/runner.js -h",
-    "tsc_runner": "node ./_infrastructure/tests/typescript/1.0.0/tsc ./_infrastructure/tests/runner.ts --target ES5 --out ./_infrastructure/tests/runner.js --module commonjs --sourcemap"
+    "test": "dt --changes",
+    "changes": "dt --changes",
+    "lint": "dt --lint",
+    "tscparams": "dt --tscparams --no-tests --no-headers",
+    "all": "dt",
+    "dry": "dt --dry --changes",
+    "list": "dt --dry --print-files --print-refmap",
+    "last": "dt --dry --print-files --print-refmap --changes",
+    "files": "dt --dry --print-files",
+    "refmap": "dt --dry --print-refmap",
+    "help": "dt -h"
   },
   "dependencies": {
-    "source-map-support": "~0.2.5",
-    "git-wrapper": "~0.1.1",
-    "glob": "~3.2.9",
-    "bluebird": "~1.0.7",
-    "lazy.js": "~0.3.2",
-    "optimist": "~0.6.1"
+  },
+  "devDependencies": {
+    "definition-tester": "0.3.0",
+    "typescript": "1.7.3"
   }
 }

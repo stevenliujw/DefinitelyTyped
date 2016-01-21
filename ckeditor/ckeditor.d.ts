@@ -9,6 +9,7 @@ declare module CKEDITOR {
 
     // Config options
     var disableAutoInline: boolean;
+    var disableObjectResizing: boolean;
     var replaceClass: string;
     var skinName: string;
 
@@ -63,6 +64,7 @@ declare module CKEDITOR {
     var status: string;
     var timestamp: string;
     var version: string;
+    var config: config;
 
 
     // Methods
@@ -72,6 +74,7 @@ declare module CKEDITOR {
     function appendTo(element: string, config?: config, data?: string): editor;
     function appendTo(element: HTMLTextAreaElement, config?: config, data?: string): editor;
     function domReady(): void;
+    function dialogCommand(dialogName: string): void;
     function editorConfig(config: config): void;
     function getCss(): string;
     function getTemplate(name: string): template;
@@ -549,11 +552,39 @@ declare module CKEDITOR {
 
     }
 
+    interface toolbarGroups {
+        name?: string;
+        groups?: string[];
+    }
 
+          // Currently very incomplete. See here for all options that should be included:
+          // http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-fileTools_defaultFileName
     interface config {
-        startupMode: string;
-        removeButtons: string;
+        allowedContent?: string | boolean;
+        colorButton_enableMore?: boolean;
+        colorButton_colors?: string;
+        contentsCss?: string | string[];
+        contentsLangDirection?: string;
+        customConfig?: string;
+        extraPlugins?: string;
+        font_names?: string;
+        font_defaultLabel?: string;
+        fontSize_sizes?: string;
+        fontSize_defaultLabel?: string;
+        height?: string | number;
+        language?: string;
+        on?: any;
+        plugins?: string;
+        startupFocus?: boolean;
+        startupMode?: string;
+        removeButtons?: string;
+        removePlugins?: string;
         toolbar?: any;
+        toolbarGroups?: toolbarGroups[];
+        toolbarLocation?: string;
+        readOnly?: boolean;
+        skin?: string;
+        width?: string | number;
     }
 
 
@@ -602,10 +633,134 @@ declare module CKEDITOR {
 
 
         module widget {
-            class repository {
+            interface IWidget {
+                allowedContent: any;
+                button: string;
+                contentForms: Object;
+                contentTransformations: Object;
+                data: Function;
+                defaults: Object;
+                dialog: String;
+                downcast: string | Function;
+                downcasts: Object;
+                draggable: boolean;
+                editables: Object;
+                init: Function;
+                inline: Boolean;
+                insert: Function;
+                mask: Boolean;
+                name: String;
+                parts: Object;
+                pathName: string;
+                requiredContent: any;
+                styleToAllowedContentRules: Function;
+                styleableElements: string;
+                template: string;
+                upcast: string | Function;
+                upcasts: Object;
 
+                addClass(className: string): void;
+                applyStyle(style: any): void; // any should be CKEDITOR.style
+                capture(): void;
+                checkStyleActive(style: any): boolean; // any should be CKEDITOR.style
+                define(name: string, meta: { errorProof?: boolean }): void;
+                destroy(offline?: boolean): void;
+                destroyEditable(editableName: string, offline?: boolean): void;
+                edit(): boolean;
+                fire(eventName: string, data?: Object, editor?: editor): any; // should be boolean | Object
+                fireOnce(eventName: string, data?: Object, editor?: editor): any; // should be boolean | Object
+                focus(): void;
+                getClasses(): Object;
+                hasClass(className: string, Whether: boolean): void;
+                hasListeners(eventName: string): boolean;
+                initEditable(editableName: string, definition: any): boolean; // any should be CKEDITOR.plugins.widget.nestedEditable.definition
+                isInited(): boolean;
+                isReady(): boolean;
+                on(eventName: string, listenerFunction: Function,
+                    scopeObj: Object, listenerData: Object, priority: number): Object;
+                once(): void;
+                removeAllListeners(): void;
+                removeClass(className: string): void;
+                removeListener(evnetName: string, listenerFunction: Function): void;
+                removeStyle(style: any): void; // any should be CKEDITOR.style
+                setData(keyOrData: string | {}, value?: Object): IWidget;
+                setFocused(selected: boolean): IWidget;
+                setSelected(selected: boolean): IWidget;
+                toFeature(): any; // should be CKEDITOR.feature
+                updateDragHandlerPosition(): void;
+            }
+
+            interface IWidgetDefinition {
+                allowedContent?: any;
+                button?: string;
+                contentForms?: Object;
+                contentTransformations?: Object;
+                data?: Function;
+                defaults?: Object;
+                dialog?: String;
+                downcast?: string | Function;
+                downcasts?: Object;
+                draggable?: boolean;
+                edit?: Function;
+                editables?: Object;
+                init?: Function;
+                inline?: Boolean;
+                insert?: Function;
+                mask?: Boolean;
+                name?: String;
+                parts?: Object;
+                pathName?: string;
+                requiredContent?: any;
+                styleToAllowedContentRules?: Function;
+                styleableElements?: string;
+                template?: string;
+                upcast?: string | Function;
+                upcasts?: Object;
+                toFeature?(): any; // should be CKEDITOR.feature
+            }
+
+            class repository {
+                add(name: string, widgetDef: IWidgetDefinition): void;
+                addUpcastCallback(callback: Function): void;
+                capture(): void;
+                checkSelection(): void;
+                checkWidgets(options?: {initOnlyNew?: boolean; focusInited?: boolean}): void;
+                define(name: string, meta?: {errorProof?: boolean}): void;
+                del(widget: IWidget): void;
+                destroy(widget: IWidget, offline?: boolean): void;
+                destroyAll(offline?: boolean): void;
+                finalizeCreation(container: any): void;
+                fire(eventName: string, data: Object, editor: editor): any; // should be boolean | Object
+                getByElement(element: any, checkWrapperOnly: boolean): IWidget;
+                hasListeners(eventName: string): boolean;
+                initOn(element: any, widgetDef?: IWidgetDefinition, startupData?: Object): IWidget;
+                initOnAll(container?: any): IWidget[];
+                on(eventName: string, listenerFunction: Function, scopeObj?: Object, listenerData?: Object, priority?: number): Object;
+                once(): void;
+                parseElementClasses(classes: string): Object;
+                removeAllListeners(eventName: string, listenerFunction: Function): void;
+                wrapElement(element: any, widgetName?: string): any;
             }
         }
+
+        interface IPluginDefinition {
+            hidpi?: boolean;
+            lang?: string | string[];
+            requires?: string | string[];
+            afterInit?(editor: editor): any;
+            beforeInit?(editor: editor): any;
+            init?(editor: editor): any;
+            onLoad?(): any;
+            icons?: string;
+        }
+
+        function add(name: string, definition?: IPluginDefinition): void;
+        function addExternal(name: string, path: string, fileName: string): void;
+        function get(name: string): any;
+        function getFilePath(name: string): string;
+        function getPath(name: string): string;
+        function load(name: string, callback: string, scope: any): void;
+        function setLang(pluginName: string, languageCode: string, languageEntries: any): void;
 
     }
 
@@ -666,7 +821,7 @@ declare module CKEDITOR {
         getClipboardData(options: Object, callback: Function): void;
         getColorFromDialog(callback: Function, scope?: Object): void;
         getCommand(commandName: string): command;
-        getData(noEvents: Object): string;
+        getData(noEvents?: Object): string;
         getMenuItem(name: string): Object;
         getResizable(forContents: boolean): dom.element;
         getSelection(forceRealSelection?: boolean): dom.selection;
@@ -695,7 +850,7 @@ declare module CKEDITOR {
         selectionChange(checkNow?: boolean): void;
         setActiveEnterMode(enterMode: number, shiftEnterMode: number): void;
         setActiveFilter(filter: filter): void;
-        setData(data: string, callback: Function, internal: boolean): void;
+        setData(data: string, options?: { internal?: boolean; callback?: Function; noSnapshot?: boolean; }): void;
         setKeystroke(keystroke: number, behavior?: string): void;
         setKeystroke(keystroke: any[], behavior?: string): void;
         setKeystroke(keystroke: number, behavior?: boolean): void;
@@ -785,6 +940,8 @@ declare module CKEDITOR {
             interface button extends uiElement {
                 disabled?: boolean;
                 label?: string;
+                command?: string;
+                toolbar?: string;
             }
 
 
@@ -951,4 +1108,43 @@ declare module CKEDITOR {
         addFocusable(element: CKEDITOR.dom.element, index: number): void;
     }
 
+    module tools {
+        var callFunction: Function;
+    }
+
+    module dialog {
+        interface IDialogDefinition {
+            buttons?: any[];
+            contents?: any[];
+            height?: number;
+            minHeight?: number;
+            minWidth?: number;
+            onCancel?: Function;
+            onLoad?: Function;
+            onOk?: Function;
+            onShow?: Function;
+            resizable?: number;
+            title?: string;
+            width?: number;
+        }
+
+        function add(name: string, path: string): void;
+        function add(name: string, dialogDefinition: IDialogDefinition): void;
+        function addIframe(name: string, title: string, minWidth: number,
+            minHeight: number, onContentLoad: Function, userDefinition: any): void;
+        function addUIElement(typeName: string, builder: Function): void;
+        function cancelButton(): void;
+        function exists(name: string): void;
+        function getCurrent(): void;
+        function isTabEnabled(editor: editor, dialogName: string, tabName: string): boolean;
+        function okButton(): void;
+    }
+
+    module lang {
+        var languages: any;
+        var rtl: any;
+
+        function load(languageCode: string, defaultLanguage: string, callback: Function): void;
+        function detect(defaultLanguage: string, probeLanguage: string): string;
+    }
 }

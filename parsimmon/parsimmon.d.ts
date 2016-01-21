@@ -1,12 +1,14 @@
-// Type definitions for Parsimmon 0.3.0
-// Project: https://github.com/jayferd/parsimmon
-// Definitions by: Bart van der Schoor <https://github.com/Bartvds>
+// Type definitions for Parsimmon 0.5.0
+// Project: https://github.com/jneen/parsimmon
+// Definitions by: Bart van der Schoor <https://github.com/Bartvds>, Mizunashi Mana <https://github.com/mizunashi-mana>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
 // TODO convert to generics
 
 declare module 'parsimmon' {
 	module Parsimmon {
+		
+		export type StreamType = string;
 
 		export interface Mark<T> {
 			start: number;
@@ -14,16 +16,27 @@ declare module 'parsimmon' {
 			value: T;
 		}
 
+		export interface Result<T> {
+			status: boolean;
+			value?: T;
+			expected?: string;
+			index?: number;
+		}
+
 		export interface Parser<T> {
 			/*
 			 parse the string
 			 */
-			parse(input: string): T;
+			parse(input: string): Result<T>;
 			/*
 			 returns a new parser which tries parser, and if it fails uses otherParser.
 			 */
 			or(otherParser: Parser<T>): Parser<T>;
 			or<U>(otherParser: Parser<U>): Parser<any>;
+			/*
+			 returns a new parser which tries parser, and on success calls the given function with the result of the parse, which is expected to return another parser, which will be tried next
+			 */
+			chain<U>(next: (result: T) => Parser<U>): Parser<U>;
 			/*
 			 returns a new parser which tries parser, and on success calls the given function with the result of the parse, which is expected to return another parser.
 			 */
@@ -65,9 +78,11 @@ declare module 'parsimmon' {
 			 */
 			atLeast(n: number): Parser<T[]>;
 			/*
-			 yields an object with start, value, and end keys, where value is the original value yielded by the parser, and start and end are the indices in the stream that contain the parsed text.
+			 returns a new parser whose failure message is the passed description.
 			 */
 			mark(): Parser<Mark<T>>;
+
+			desc(description: string): Parser<T>;
 		}
 		/*
 		 is a parser that expects to find "my-string", and will yield the same.
@@ -87,12 +102,28 @@ declare module 'parsimmon' {
 		/*
 		 accepts a variable number of parsers that it expects to find in order, yielding an array of the results.
 		 */
+		export function seq<U>(...parsers: Parser<U>[]): Parser<U[]>;
 		export function seq(...parsers: Parser<any>[]): Parser<any[]>;
+
+		export type SuccessFunctionType<U> = (index: number, result: U) => Result<U>;
+		export type FailureFunctionType<U> = (index: number, msg: string) => Result<U>;
+		export type ParseFunctionType<U> = (stream: StreamType, index: number) => Result<U>;
+		/*
+		 allows to add custom primitive parsers.
+		 */
+		export function custom<U>(parsingFunction: (success: SuccessFunctionType<U>, failure: FailureFunctionType<U>) => ParseFunctionType<U>): Parser<U>;
+
+		/*
+		 accepts a variable number of parsers, and yields the value of the first one that succeeds, backtracking in between.
+		 */
+		export function alt<U>(...parsers: Parser<U>[]): Parser<U>;
+		export function alt(...parsers: Parser<any>[]): Parser<any>;
 
 		/*
 		 accepts a function that returns a parser, which is evaluated the first time the parser is used. This is useful for referencing parsers that haven't yet been defined.
 		 */
 		export function lazy<U>(f: () => Parser<U>): Parser<U>;
+		export function lazy<U>(description: string, f: () => Parser<U>): Parser<U>;
 
 		/*
 		 fail paring with a message
@@ -135,7 +166,7 @@ declare module 'parsimmon' {
 		/*
 		 expects the end of the stream.
 		 */
-		export var eof: Parser<string>;
+		export var eof: Parser<void>;
 		/*
 		 is a parser that yields the current index of the parse.
 		 */
